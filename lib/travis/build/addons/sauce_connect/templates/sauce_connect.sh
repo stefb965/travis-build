@@ -59,6 +59,8 @@ function travis_start_sauce_connect() {
     ${SAUCE_TUNNEL_DOMAINS} &
   _SC_PID="$!"
 
+  trap travis_stop_sauce_connect EXIT
+
   echo "Waiting for Sauce Connect readyfile"
   while [ ! -f ${sc_readyfile} ]; do
     sleep .5
