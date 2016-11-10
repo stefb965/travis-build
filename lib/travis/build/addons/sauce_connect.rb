@@ -27,6 +27,10 @@ module Travis
             sh.export 'SAUCE_TUNNEL_DOMAINS', "'-t #{tunnel_domains}'", echo: false
           end
 
+          if verbose
+            sh.export 'SAUCE_VERBOSE', "'--verbose'", echo: false
+          end
+
           sh.fold 'sauce_connect.start' do
             sh.echo 'Starting Sauce Connect', echo: false, ansi: :yellow
             sh.cmd 'travis_start_sauce_connect', assert: false, echo: true, timing: true
@@ -61,6 +65,10 @@ module Travis
 
           def tunnel_domains
             config[:tunnel_domains]
+          end
+
+          def verbose
+            config[:verbose]
           end
       end
     end

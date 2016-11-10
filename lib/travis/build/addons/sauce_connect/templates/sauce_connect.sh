@@ -56,7 +56,8 @@ function travis_start_sauce_connect() {
     -l ${sc_logfile} \
     ${SAUCE_NO_SSL_BUMP_DOMAINS} \
     ${SAUCE_DIRECT_DOMAINS} \
-    ${SAUCE_TUNNEL_DOMAINS} &
+    ${SAUCE_TUNNEL_DOMAINS} \
+    ${SAUCE_VERBOSE} &
   _SC_PID="$!"
 
   echo "Waiting for Sauce Connect readyfile"
