@@ -25,6 +25,22 @@ module Travis
           setup_npm_cache if use_npm_cache?
         end
 
+        def configure
+          super
+
+          sh.if '-f package.json' do
+            sh.if "-f yarn.lock" do
+              if version.to_i < 4
+                sh.echo "Node.js version #{version} does not meet requirement for yarn. Please use Node.js 4 or later.", ansi: :red
+              else
+                sh.if "!(command -v yarn >&/dev/null)" do
+                  install_yarn
+                end
+              end
+            end
+          end
+        end
+
         def announce
           super
           if iojs_3_plus?
@@ -42,14 +58,7 @@ module Travis
         def install
           sh.if '-f package.json' do
             sh.if "-f yarn.lock" do
-              if version.to_i < 4
-                sh.echo "Node.js version #{version} does not meet requirement for yarn. Please use Node.js 4 or later.", ansi: :red
-              else
-                sh.if "!(command -v yarn)" do
-                  install_yarn
-                end
-                sh.cmd "yarn", retry: true, fold: 'install'
-              end
+              sh.cmd "yarn", retry: true, fold: 'install'
             end
             sh.else do
               sh.cmd "npm install #{config[:npm_args]}", retry: true, fold: 'install'
@@ -153,7 +162,7 @@ module Travis
           end
 
           def npm_disable_prefix
-            sh.if "$(command -v sw_vers) && -f $HOME/.npmrc" do
+            sh.if "$(command -v sw_vers >&/dev/null) && -f $HOME/.npmrc" do
               sh.cmd "npm config delete prefix"
             end
           end
@@ -196,9 +205,29 @@ module Travis
           end
 
           def install_yarn
-            sh.cmd    "curl -o- -L https://yarnpkg.com/install.sh | bash", echo: true
+            sh.if "$(command -v lsb_release >&/dev/null)" do
+              install_yarn_apt
+            end
+            sh.elif "$(command -v sw_vers >&/dev/null)" do
+              install_yarn_brew
+            end
             sh.echo   "Setting up \\$PATH", ansi: :green
             sh.export "PATH", "$HOME/.yarn/bin:$PATH"
+          end
+
+          def install_yarn_apt
+            sh.echo "Install Yarn GPG key", echo: :green
+            sh.cmd "curl https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -"
+            sh.echo "Add Yarn APT source", echo: :green
+            sh.cmd "echo \"deb http://dl.yarnpkg.com/debian/ stable main\" | sudo tee -a /etc/apt/sources.list.d/yarn.list"
+            sh.echo "Install Yarn", echo: :green
+            sh.cmd "sudo apt-get update && sudo apt-get install yarn"
+          end
+
+          def install_yarn_brew
+            sh.echo "Install Yarn", echo: :green
+            sh.cmd "brew update"
+            sh.cmd "brew install yarn"
           end
       end
     end
