@@ -25,7 +25,7 @@ module Travis
           setup_npm_cache if use_npm_cache?
         end
 
-        def configure
+        def prepare
           super
 
           sh.if '-f package.json' do
@@ -208,7 +208,7 @@ module Travis
             sh.if "$(command -v lsb_release >&/dev/null)" do
               install_yarn_apt
             end
-            sh.elif "$(command -v sw_vers >&/dev/null)" do
+            sh.elif "$(sw_vers >&/dev/null)" do
               install_yarn_brew
             end
             sh.echo   "Setting up \\$PATH", ansi: :green
