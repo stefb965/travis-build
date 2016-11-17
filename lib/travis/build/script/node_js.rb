@@ -33,7 +33,7 @@ module Travis
               if version.to_i < 4
                 sh.echo "Node.js version #{version} does not meet requirement for yarn. Please use Node.js 4 or later.", ansi: :red
               else
-                sh.if "! $(command -v yarn >&/dev/null)" do
+                sh.if "-z $(command -v yarn >&/dev/null)" do
                   install_yarn
                 end
               end
@@ -205,10 +205,10 @@ module Travis
           end
 
           def install_yarn
-            sh.if "$(command -v lsb_release >&/dev/null)" do
+            sh.if "$(command -v lsb_release)" do
               install_yarn_apt
             end
-            sh.elif "$(sw_vers >&/dev/null)" do
+            sh.elif "$(command -v sw_vers)" do
               install_yarn_brew
             end
             sh.echo   "Setting up \\$PATH", ansi: :green
