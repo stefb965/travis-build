@@ -216,18 +216,22 @@ module Travis
           end
 
           def install_yarn_apt
-            sh.echo "Install Yarn GPG key", echo: :green
-            sh.cmd "curl https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -"
-            sh.echo "Add Yarn APT source", echo: :green
-            sh.cmd "echo \"deb http://dl.yarnpkg.com/debian/ stable main\" | sudo tee -a /etc/apt/sources.list.d/yarn.list"
-            sh.echo "Install Yarn", echo: :green
-            sh.cmd "sudo apt-get update && sudo apt-get install yarn"
+            sh.fold "yarn_install" do
+              sh.echo "Install Yarn GPG key", echo: :green
+              sh.cmd "curl https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -", timing: true
+              sh.echo "Add Yarn APT source", echo: :green
+              sh.cmd "echo \"deb http://dl.yarnpkg.com/debian/ stable main\" | sudo tee -a /etc/apt/sources.list.d/yarn.list", timing: true
+              sh.echo "Install Yarn", echo: :green
+              sh.cmd "sudo apt-get update && sudo apt-get install yarn", timing: true
+            end
           end
 
           def install_yarn_brew
-            sh.echo "Install Yarn", echo: :green
-            sh.cmd "brew update"
-            sh.cmd "brew install yarn"
+            sh.fold "yarn_install" do
+              sh.echo "Install Yarn", echo: :green
+              sh.cmd "brew update", timing: true
+              sh.cmd "brew install yarn", timing: true
+            end
           end
       end
     end
