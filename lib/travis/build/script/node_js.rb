@@ -222,7 +222,8 @@ module Travis
               sh.echo "Add Yarn APT source", ansi: :green
               sh.cmd "echo \"deb http://dl.yarnpkg.com/debian/ stable main\" | sudo tee -a /etc/apt/sources.list.d/yarn.list", timing: true
               sh.echo "Install Yarn", ansi: :green
-              sh.cmd "sudo apt-get update && sudo apt-get install yarn", timing: true
+              sh.cmd "sudo apt-get update", timing: true
+              sh.cmd "sudo apt-get install yarn", timing: true
             end
           end
 
