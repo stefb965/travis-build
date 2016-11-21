@@ -15,13 +15,11 @@ module Travis
 
         def configure
           super
-
           if is_squeak? or is_etoys?
             install_dependencies(DEFAULT_DEPS)
           elsif is_pharo? or is_moose?
             install_dependencies(PHARO_DEPS)
           elsif is_gemstone?
-
             sh.fold 'gemstone_prepare_dependencies' do
               sh.echo 'Preparing build for GemStone', ansi: :yellow
               gemstone_configure_hosts
@@ -33,12 +31,11 @@ module Travis
               when 'osx'
                 gemstone_prepare_osx_shared_memory
               end
-
               gemstone_prepare_netldi
               gemstone_prepare_directories
             end
-
           end
+          set_rtprio_limit if config[:os] == 'linux'
         end
 
         def export
@@ -234,6 +231,67 @@ module Travis
               sh.cmd 'sudo chown $USER:${GROUPS[0]} /opt/gemstone /opt/gemstone/log /opt/gemstone/locks'
               sh.cmd 'sudo chmod 770 /opt/gemstone /opt/gemstone/log /opt/gemstone/locks'
             end
+          end
+
+          def set_rtprio_limit
+            sh.cmd "pushd $(mktemp -d) > /dev/null", echo: false
+            File.open('set_rtprio_limit.c', 'w') { |f| f.write <<-RTPRIO_CODE
+              // Set rtprio to 2:2 for a given pid (required to run OpenSmalltalk VMs).
+
+              #define _GNU_SOURCE
+              #define _FILE_OFFSET_BITS 64
+              #include <stdio.h>
+              #include <time.h>
+              #include <stdlib.h>
+              #include <unistd.h>
+              #include <sys/resource.h>
+
+              #define errExit(msg) do { perror(msg); exit(EXIT_FAILURE); \
+               } while (0)
+
+              int main(int argc, char *argv[]) {
+                struct rlimit old, new;
+                struct rlimit *newp;
+                pid_t pid;
+
+                if (!(argc == 2)) {
+                  fprintf(stderr, "Usage: %s <pid>\n", argv[0]);
+                  exit(EXIT_FAILURE);
+                }
+
+                pid = atoi(argv[1]); /* PID of target process */
+
+                new.rlim_cur = 2;
+                new.rlim_max = 2;
+                newp = &new;
+
+                /* Set RTPRIO limit of target process; retrieve and display
+                previous limit */
+
+                if (prlimit(pid, RLIMIT_RTPRIO, newp, &old) == -1)
+                  errExit("prlimit-rtprio-1");
+                printf("Previous limits: soft=%lld; hard=%lld\n",
+                  (long long) old.rlim_cur, (long long) old.rlim_max);
+
+                /* Retrieve and display new RTPRIO limit */
+
+                if (prlimit(pid, RLIMIT_RTPRIO, NULL, &old) == -1)
+                  errExit("prlimit-rtprio-2");
+                printf("New limits: soft=%lld; hard=%lld\n",
+                  (long long) old.rlim_cur, (long long) old.rlim_max);
+
+                exit(EXIT_SUCCESS);
+              }
+              RTPRIO_CODE
+            }
+
+            sh.fold "set_rtprio_limit" do
+              sh.echo "Setting up real time priority for OpenSmalltalk VMs", ansi: :yellow
+              sh.cmd "gcc -o set_rtprio_limit set_rtprio_limit.c"
+              sh.cmd "chmod +x ./set_rtprio_limit"
+              sh.cmd "sudo ./set_rtprio_limit $$"
+            end
+            sh.cmd "popd > /dev/null", echo: false
           end
 
       end
