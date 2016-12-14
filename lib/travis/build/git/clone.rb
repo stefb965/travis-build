@@ -22,7 +22,7 @@ module Travis
                 sh.cmd "git -C #{dir} config core.sparseCheckout true", assert: true, retry: true
                 sh.cmd "echo #{sparseCheckout} >> #{dir}/.git/info/sparseCheckout", assert: true, retry: true
                 sh.cmd "git -C #{dir} remote add origin #{data.source_url}", assert: true, retry: true
-                sh.cmd "git -C #{dir} #{pull_args} pull origin #{branch}", assert: true, retry: true
+                sh.cmd "git -C #{dir} pull origin #{branch} #{pull_args}", assert: true, retry: true
                 sh.cmd "cat #{sparseCheckout} >> #{dir}/.git/info/sparseCheckout", assert: true, retry: true
                 sh.cmd "git -C #{dir} reset --hard", assert: true, timing: false
               else
