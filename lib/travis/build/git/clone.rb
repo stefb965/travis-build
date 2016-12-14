@@ -19,7 +19,7 @@ module Travis
             sh.if "! -d #{dir}/.git" do
               if sparseCheckout?
                 sh.cmd "git init #{dir}", assert: true, retry: true
-                sh.cmd "git -C #{dir} git config core.sparseCheckout true", assert: true, retry: true
+                sh.cmd "git -C #{dir} config core.sparseCheckout true", assert: true, retry: true
                 sh.cmd "echo #{sparseCheckout} >> #{dir}/.git/info/sparseCheckout", assert: true, retry: true
                 sh.cmd "git -C #{dir} remote add origin #{data.source_url}", assert: true, retry: true
                 sh.cmd "git -C #{dir} #{pull_args} pull origin #{branch}", assert: true, retry: true
